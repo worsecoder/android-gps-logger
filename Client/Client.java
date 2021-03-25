@@ -15,7 +15,7 @@ public class Client {
 			System.out.println("Connect Success!");
 			DataInputStream din = new DataInputStream(socket.getInputStream());
 			DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
-			dout.writeUTF("Hello Server");
+			dout.writeUTF("Tell me the GPS location!");
 			dout.flush();
 			String serverResponse = din.readUTF();
 			System.out.println("Server response: " + serverResponse);

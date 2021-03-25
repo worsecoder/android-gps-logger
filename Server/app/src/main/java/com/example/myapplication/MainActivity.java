@@ -1,5 +1,12 @@
 package com.example.myapplication;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -7,12 +14,14 @@ import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 
 import android.util.Log;
 import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -25,6 +34,28 @@ import java.nio.Buffer;
 
 public class MainActivity extends AppCompatActivity {
     private static final int BUFFER_SIZE = 1024;
+    private double last_seen_lat = -1.0, last_seen_logi = -1.0;
+
+    private final class MyLocationListener implements LocationListener {
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d("GPS", "location update!");
+            last_seen_lat = location.getLatitude();
+            last_seen_logi = location.getLongitude();
+            Toast.makeText(MainActivity.this, "location:("+last_seen_lat+","+last_seen_logi, Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onProviderDisabled(String privder){
+            Toast.makeText(MainActivity.this, "provider disabled", Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras){
+            Toast.makeText(MainActivity.this, "status changed to " + status, Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,6 +64,23 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        Criteria ct = new Criteria();
+        ct.setSpeedRequired(true);
+        String provider = locationManager.getBestProvider(ct, true);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            Log.d("GPS", "GPS not enabled");
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0, new MyLocationListener());
+        Toast.makeText(MainActivity.this, "LocationListener registered!", Toast.LENGTH_LONG).show();
         Runnable networkTask = new Runnable() {
             @Override
             public void run() {
@@ -44,18 +92,13 @@ public class MainActivity extends AppCompatActivity {
                     //while (socket.isConnected()){
                     DataInputStream din = new DataInputStream(socket.getInputStream());
                     DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
-                    //BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    //char[] data = new char[BUFFER_SIZE];
-                    //int len = br.read(data);
-                    //Log.d("GPS", "len = " + len);
-                    //String str = String.valueOf(data, 0, len);
                     String str = (String)din.readUTF();
                     if (str != null) {
                         Log.d("GPS", "data arrived: " + str);
                     } else {
                         Log.d("GPS", "no data!");
                     }
-                    dout.writeUTF("server response");
+                    dout.writeUTF("lat:" + last_seen_lat + ",log:" + last_seen_logi);
                     dout.flush();
                     //socket.close();
                     //serverSocket.close();
