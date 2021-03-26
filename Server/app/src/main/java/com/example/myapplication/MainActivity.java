@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private final class MyLocationListener implements LocationListener {
         @Override
         public void onLocationChanged(Location location) {
-            Log.d("GPS", "location update!");
             last_seen_lat = location.getLatitude();
             last_seen_logi = location.getLongitude();
             Toast.makeText(MainActivity.this, "location:("+last_seen_lat+","+last_seen_logi, Toast.LENGTH_LONG).show();
@@ -92,14 +91,17 @@ public class MainActivity extends AppCompatActivity {
                     //while (socket.isConnected()){
                     DataInputStream din = new DataInputStream(socket.getInputStream());
                     DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
-                    String str = (String)din.readUTF();
-                    if (str != null) {
-                        Log.d("GPS", "data arrived: " + str);
-                    } else {
-                        Log.d("GPS", "no data!");
+                    while (true){
+                        Log.d("GPS", "1");
+                        String str = (String)din.readUTF();
+                        if (str != null) {
+                            Log.d("GPS", "request arrived: " + str);
+                        } else {
+                            Log.d("GPS", "no data!");
+                        }
+                        dout.writeUTF("lat:" + last_seen_lat + ",log:" + last_seen_logi);
+                        dout.flush();
                     }
-                    dout.writeUTF("lat:" + last_seen_lat + ",log:" + last_seen_logi);
-                    dout.flush();
                     //socket.close();
                     //serverSocket.close();
                     //}
