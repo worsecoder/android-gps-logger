@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(networkTask).start();
             }
         });
+
     }
 
     @Override
